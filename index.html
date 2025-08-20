@@ -1,4 +1,8 @@
-<!DOCTYPE html>
+// Use text/plain to avoid CORS preflight with Apps Script
+        const json = await (async () => {
+          try { return await res.json(); } catch(_) { const t = await res.text(); return { ok:false, error:`Respuesta no JSON (${res.status}): ${t.slice(0,200)}` }; }
+        })();
+        if (!json || json.ok !== true) throw new Error(json && json.error || `HTTP ${res.status}`);<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
@@ -307,7 +311,7 @@
     };
 
     try{
-      const res = await fetch(GAS_ENDPOINT, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+      const res = await fetch(GAS_ENDPOINT, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(payload) });
       const json = await res.json();
       if (!json || json.ok !== true) throw new Error(json && json.error || 'Error al guardar');
       showToast('Enviado ✅');
