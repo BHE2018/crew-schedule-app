@@ -128,24 +128,27 @@
 
   <script>
   // === CONFIG ===
-  const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbzwqHS7-shpExl0aAIRVGZGbPnj2vfPIhl74hDFbzXyMw8fC63fu4rzMsMet9Rv5_19/exec";
+  const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbyVDvF9ZCzv5haxryyi0OYA_78LWSLHMPxhN4jSEX2Yx1m1o8jXJ0ETXzHzxl2dZCoQ/exec";
 
-  // tiny UI diag helper
+  // Globals
+  let ALL_CREW = [];          // from getCrewList
+  let TEAM_SELECTED = [];     // selected team members in the modal
+
+  // Tiny UI helpers
   function diag(msg){ const el=document.getElementById('diag'); if(!el) return; el.textContent=msg; el.classList.remove('hidden'); console.log('[DIAG]', msg); }
+  function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.remove('hidden'); setTimeout(()=>t.classList.add('hidden'), 2200); }
+  function todayISO(){ return new Date().toLocaleDateString('en-CA', { timeZone: 'America/Chicago' }); }
 
   // === Load employees into the top select ===
   async function fetchCrew(){
     try{
       const res = await fetch(`${GAS_ENDPOINT}?action=getCrewList`);
       const list = await res.json();
+      ALL_CREW = Array.isArray(list) ? list : [];
       const sel = document.getElementById('crewSelect');
       sel.innerHTML = '<option value="" disabled selected>Elige tu nombre…</option>';
-      if(Array.isArray(list)){
-        list.forEach(name=>{ const o=document.createElement('option'); o.value=name; o.textContent=name; sel.appendChild(o); });
-        diag(`Empleados cargados: ${list.length}`);
-      }else{
-        diag('No se recibieron empleados (revisa GAS)');
-      }
+      ALL_CREW.forEach(name=>{ const o=document.createElement('option'); o.value=name; o.textContent=name; sel.appendChild(o); });
+      diag(`Empleados cargados: ${ALL_CREW.length}`);
     }catch(err){ diag('Error al cargar empleados'); console.error(err); }
   }
 
@@ -153,7 +156,11 @@
   async function fetchSchedule(crewName){
     if(!crewName){ return; }
     try{
-      const res = await fetch(`${GAS_ENDPOINT}?action=getNextJob&crew=${encodeURIComponent(crewName)}`);
+      const url = new URL(GAS_ENDPOINT);
+      url.searchParams.set('action','getNextJob');
+      url.searchParams.set('crew', crewName);
+      url.searchParams.set('date', todayISO());
+      const res  = await fetch(url.toString());
       const data = await res.json();
 
       const scheduleList = document.getElementById('scheduleList');
@@ -162,10 +169,11 @@
       scheduleList.innerHTML = '';
 
       const job = (data && (data.jobNumber || data.address || data.jobId)) ? data : null;
+      diag(`[EN VIVO] ${crewName} → ${job ? 1 : 0} trabajo(s)`);
+
       if(!job){
         emptyState.classList.remove('hidden');
         scheduleSect.classList.add('hidden');
-        diag(`[EN VIVO] ${crewName} → 0 trabajos`);
         return;
       }
 
@@ -173,32 +181,150 @@
       scheduleSect.classList.remove('hidden');
 
       const li = document.createElement('li');
-      li.className = 'p-3 rounded-xl border border-slate-200 bg-white shadow-sm';
+      li.className = 'p-4 rounded-xl border border-slate-200 bg-white shadow-sm';
       li.innerHTML = `
-        <div class="font-semibold">${job.jobNumber || ''}</div>
-        <div class="text-sm text-slate-600">${job.address || ''}</div>
-      `;
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <div class="font-semibold text-lg">${job.jobNumber || '(sin número)'}</div>
+            <div class="text-sm text-slate-600">${job.address || '(sin dirección)'}</div>
+          </div>
+          <button class="btn-green px-3 py-2 rounded-xl text-white text-sm font-semibold shadow-md active:scale-[.99]" id="openFormBtn">Llenar</button>
+        </div>`;
       scheduleList.appendChild(li);
-      diag(`[EN VIVO] ${crewName} → 1 trabajo`);
+
+      // Wire up the green button to open modal
+      li.querySelector('#openFormBtn').addEventListener('click', ()=> openJobModal(job));
     }catch(err){ diag('Error al cargar el trabajo'); console.error(err); }
   }
+
+  // === Modal logic ===
+  function openJobModal(job){
+    // reset form
+    const form = document.getElementById('jobForm');
+    form.reset();
+    TEAM_SELECTED = [];
+    renderTeamTokens();
+    buildCrewOptions();
+
+    // fill hidden fields & title
+    document.getElementById('jobId').value      = job.jobId || '';
+    document.getElementById('jobNumber').value  = job.jobNumber || '';
+    document.getElementById('jobAddress').value = job.address || '';
+    document.getElementById('modalTitle').textContent = `Trabajo ${job.jobNumber || ''}`;
+
+    // Payment type enable/disable
+    const payCollected = document.getElementById('paymentCollected');
+    const payType      = document.getElementById('paymentType');
+    function updatePayType(){
+      if (payCollected.value === 'Sí') { payType.disabled = false; } else { payType.disabled = true; payType.value=''; }
+    }
+    payCollected.removeEventListener('change', updatePayType); // avoid stacking
+    payCollected.addEventListener('change', updatePayType);
+    updatePayType();
+
+    document.getElementById('modal').classList.remove('hidden');
+  }
+
+  document.getElementById('closeModal').addEventListener('click', ()=>{
+    document.getElementById('modal').classList.add('hidden');
+  });
+
+  // === Crew multi-select (dropdown + chips) ===
+  function buildCrewOptions(){
+    const me   = document.getElementById('crewSelect').value || '';
+    const list = ALL_CREW.filter(n => n !== me);
+    const ul   = document.getElementById('crewOptions');
+    ul.innerHTML = '';
+    list.forEach(name => {
+      const li = document.createElement('li');
+      li.className = 'px-3 py-2 text-sm cursor-pointer hover:bg-slate-50';
+      li.textContent = name;
+      li.addEventListener('click', ()=> toggleTeamMember(name));
+      ul.appendChild(li);
+    });
+
+    const btn = document.getElementById('crewDropdownBtn');
+    const dd  = document.getElementById('crewDropdown');
+    btn.onclick = ()=> dd.classList.toggle('hidden');
+    document.getElementById('crewSearch').oninput = (e)=> {
+      const q = e.target.value.toLowerCase();
+      Array.from(ul.children).forEach(li=>{
+        li.classList.toggle('hidden', !li.textContent.toLowerCase().includes(q));
+      });
+    };
+  }
+
+  function toggleTeamMember(name){
+    const i = TEAM_SELECTED.indexOf(name);
+    if (i === -1) TEAM_SELECTED.push(name); else TEAM_SELECTED.splice(i,1);
+    renderTeamTokens();
+  }
+
+  function renderTeamTokens(){
+    const box = document.getElementById('crewTokens');
+    box.innerHTML = '';
+    TEAM_SELECTED.forEach(name => {
+      const chip = document.createElement('span');
+      chip.className = 'inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 rounded-full px-2 py-1 text-xs';
+      chip.innerHTML = `${name} <button type="button" aria-label="remove" class="ml-1">✕</button>`;
+      chip.querySelector('button').addEventListener('click', ()=>{ toggleTeamMember(name); });
+      box.appendChild(chip);
+    });
+    const ph = document.getElementById('crewDropdownPlaceholder');
+    ph.textContent = TEAM_SELECTED.length ? '' : 'Toca para seleccionar…';
+  }
+
+  // === Submit form ===
+  document.getElementById('jobForm').addEventListener('submit', async (e)=>{
+    e.preventDefault();
+
+    const crew = document.getElementById('crewSelect').value;
+    const startTime = document.getElementById('startTime').value;
+    const endTime   = document.getElementById('endTime').value;
+    const notes     = document.getElementById('damageNotes').value.trim();
+    const status    = document.getElementById('status').value;
+    const payCol    = document.getElementById('paymentCollected').value;
+    const payType   = document.getElementById('paymentType').value;
+
+    // validations
+    if (!startTime || !endTime) return showToast('Ingresa inicio y fin.');
+    if (notes.length < 10)     return showToast('Escribe al menos 10 caracteres en Daños/Notas.');
+    if (endTime <= startTime)  return showToast('La hora de fin debe ser mayor que inicio.');
+
+    const payload = {
+      action: 'submitJob',
+      crew,
+      jobId:      document.getElementById('jobId').value,
+      jobNumber:  document.getElementById('jobNumber').value,
+      jobAddress: document.getElementById('jobAddress').value,
+      teamMembers: TEAM_SELECTED,
+      startTime,
+      endTime,
+      damageNotes: notes,
+      status,
+      paymentCollected: payCol,
+      paymentType: payType
+    };
+
+    try{
+      const res = await fetch(GAS_ENDPOINT, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+      const json = await res.json();
+      if (!json || json.ok !== true) throw new Error(json && json.error || 'Error al guardar');
+      showToast('Enviado ✅');
+      document.getElementById('modal').classList.add('hidden');
+      // Refresh to unlock next job
+      fetchSchedule(crew);
+    }catch(err){
+      console.error(err);
+      showToast('No se pudo enviar');
+    }
+  });
 
   // === Events ===
   document.addEventListener('DOMContentLoaded', ()=>{
     fetchCrew();
-
-    document.getElementById('crewSelect').addEventListener('change', (e)=>{
-      fetchSchedule(e.target.value);
-    });
-
-    document.getElementById('refreshBtn').addEventListener('click', ()=>{
-      const name = document.getElementById('crewSelect').value;
-      if(name) fetchSchedule(name);
-    });
-
-    document.getElementById('closeModal').addEventListener('click', ()=>{
-      document.getElementById('modal').classList.add('hidden');
-    });
+    document.getElementById('crewSelect').addEventListener('change', (e)=>{ fetchSchedule(e.target.value); });
+    document.getElementById('refreshBtn').addEventListener('click', ()=>{ const name=document.getElementById('crewSelect').value; if(name) fetchSchedule(name); });
   });
 </script>
 </body>
