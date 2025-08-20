@@ -21,7 +21,7 @@
       <h1 class="text-2xl font-bold">Horario del equipo</h1>
       <div class="flex items-center gap-2">
         <span id="modePill" class="hidden text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-300">DEMO</span>
-        1v1.25
+        1v1.26
       </div>
     </header>
 
@@ -56,9 +56,12 @@
           <button id="closeModal" class="rounded-full p-2 hover:bg-slate-100" aria-label="Close">✕</button>
         </div>
         <form id="jobForm" class="space-y-4">
+          <!-- Hidden job meta -->
           <input type="hidden" id="jobId" />
           <input type="hidden" id="jobNumber" />
           <input type="hidden" id="jobAddress" />
+          <input type="hidden" id="jobRep" />  <!-- NEW: keep Rep for submit -->
+
           <div>
             <label class="block text-sm font-medium mb-1">Otros miembros del equipo (selección múltiple)</label>
             <div id="crewPicker" class="relative">
@@ -75,6 +78,7 @@
               </div>
             </div>
           </div>
+
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label for="startTime" class="block text-sm font-medium mb-1">Inicio</label>
@@ -85,10 +89,12 @@
               <input id="endTime" type="time" class="w-full rounded-xl border border-slate-300 p-3" required />
             </div>
           </div>
+
           <div>
             <label for="damageNotes" class="block text-sm font-medium mb-1">Daños / Notas</label>
             <textarea id="damageNotes" rows="3" class="w-full rounded-xl border border-slate-300 p-3" required minlength="10"></textarea>
           </div>
+
           <div>
             <label for="status" class="block text-sm font-medium mb-1">Estado del trabajo</label>
             <select id="status" class="w-full rounded-xl border border-slate-300 p-3" required>
@@ -98,6 +104,7 @@
               <option>Tocón pendiente</option>
             </select>
           </div>
+
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label for="paymentCollected" class="block text-sm font-medium mb-1">¿Se cobró el pago?</label>
@@ -118,6 +125,7 @@
               </select>
             </div>
           </div>
+
           <button type="submit" class="w-full rounded-2xl btn-green py-3 text-white font-semibold shadow-md active:scale-[.99]">Enviar</button>
         </form>
       </div>
@@ -186,6 +194,7 @@
         <div class="flex items-start justify-between gap-3">
           <div>
             <div class="font-semibold text-lg">${job.jobNumber || '(sin número)'}</div>
+            <div class="text-sm text-emerald-700">Rep: ${(job.rep && String(job.rep).trim()) || '—'}</div>
             <div class="text-sm text-slate-600">${job.address || '(sin dirección)'}</div>
           </div>
           <button class="btn-green px-3 py-2 rounded-xl text-white text-sm font-semibold shadow-md active:scale-[.99]" id="openFormBtn">Llenar</button>
@@ -210,6 +219,7 @@
     document.getElementById('jobId').value      = job.jobId || '';
     document.getElementById('jobNumber').value  = job.jobNumber || '';
     document.getElementById('jobAddress').value = job.address || '';
+    document.getElementById('jobRep').value     = job.rep || '';       // NEW
     document.getElementById('modalTitle').textContent = `Trabajo ${job.jobNumber || ''}`;
 
     // Payment type enable/disable
@@ -218,7 +228,7 @@
     function updatePayType(){
       if (payCollected.value === 'Sí') { payType.disabled = false; } else { payType.disabled = true; payType.value=''; }
     }
-    payCollected.removeEventListener('change', updatePayType); // avoid stacking
+    payCollected.removeEventListener('change', updatePayType);
     payCollected.addEventListener('change', updatePayType);
     updatePayType();
 
@@ -286,7 +296,6 @@
     const payCol    = document.getElementById('paymentCollected').value;
     const payType   = document.getElementById('paymentType').value;
 
-    // validations
     if (!startTime || !endTime) return showToast('Ingresa inicio y fin.');
     if (notes.length < 10)     return showToast('Escribe al menos 10 caracteres en Daños/Notas.');
     if (endTime <= startTime)  return showToast('La hora de fin debe ser mayor que inicio.');
@@ -297,6 +306,7 @@
       jobId:      document.getElementById('jobId').value,
       jobNumber:  document.getElementById('jobNumber').value,
       jobAddress: document.getElementById('jobAddress').value,
+      rep:        document.getElementById('jobRep').value,     // NEW: include Rep
       teamMembers: TEAM_SELECTED,
       startTime,
       endTime,
@@ -312,8 +322,7 @@
       if (!json || json.ok !== true) throw new Error(json && json.error || 'Error al guardar');
       showToast('Enviado ✅');
       document.getElementById('modal').classList.add('hidden');
-      // Refresh to unlock next job
-      fetchSchedule(crew);
+      fetchSchedule(crew); // unlock next job
     }catch(err){
       console.error(err);
       showToast('No se pudo enviar');
@@ -326,6 +335,6 @@
     document.getElementById('crewSelect').addEventListener('change', (e)=>{ fetchSchedule(e.target.value); });
     document.getElementById('refreshBtn').addEventListener('click', ()=>{ const name=document.getElementById('crewSelect').value; if(name) fetchSchedule(name); });
   });
-</script>
+  </script>
 </body>
 </html>
