@@ -1,30 +1,41 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Horario del equipo & Job Form</title>
+
+  <!-- Tailwind (CDN) -->
   <script src="https://cdn.tailwindcss.com"></script>
+
   <style>
     html { -webkit-tap-highlight-color: transparent; }
-    input, select, textarea { font-size: 16px; }
-    .btn-green { background: linear-gradient(180deg, #8fd694 0%, #34c759 45%, #0b7f3b 100%); color:#fff; border:1px solid #0b7f3b; box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 4px 10px rgba(0,0,0,.12); }
+    input, select, textarea { font-size: 16px; } /* evita zoom en iOS */
+    /* Botón verde metálico */
+    .btn-green {
+      background: linear-gradient(180deg, #8fd694 0%, #34c759 45%, #0b7f3b 100%);
+      color: #fff; border: 1px solid #0b7f3b;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 4px 10px rgba(0,0,0,.12);
+    }
     .btn-green:hover { filter: brightness(1.05); }
     .btn-green:active { transform: translateY(1px); }
     .btn-link-green { color:#0e8f45; }
     .btn-link-green:hover { text-decoration: underline; }
   </style>
 </head>
+
 <body class="bg-slate-50 text-slate-800">
   <div class="max-w-md mx-auto min-h-screen p-4">
+    <!-- Header -->
     <header class="flex items-center justify-between mb-4">
       <h1 class="text-2xl font-bold">Horario del equipo</h1>
       <div class="flex items-center gap-2">
         <span id="modePill" class="hidden text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-300">DEMO</span>
-        1v1.25
+        <span id="version" class="text-xs text-slate-500">v1.3</span>
       </div>
     </header>
 
+    <!-- Crew picker -->
     <section class="mb-4">
       <label for="crewSelect" class="block text-sm font-medium mb-2">Selecciona tu nombre</label>
       <select id="crewSelect" class="w-full rounded-2xl border border-slate-300 bg-white p-3 shadow-sm focus:ring-2 focus:ring-indigo-500">
@@ -32,33 +43,39 @@
       </select>
     </section>
 
+    <!-- Schedule -->
     <section id="scheduleSection" class="hidden">
       <div class="flex items-center justify-between mb-2">
         <h2 class="text-lg font-semibold">Tu siguiente trabajo</h2>
-        <div class="flex items-center gap-3">
-          <button id="refreshBtn" class="text-sm btn-link-green underline">Actualizar</button>
-          <button id="resetDemoBtn" class="text-sm btn-link-green underline hidden">Reiniciar demo</button>
-        </div>
+        <button id="refreshBtn" class="text-sm btn-link-green underline">Actualizar</button>
       </div>
       <p id="diag" class="text-xs text-slate-500 mb-2 hidden"></p>
       <ul id="scheduleList" class="space-y-2"></ul>
     </section>
 
+    <!-- Empty -->
     <section id="emptyState" class="hidden text-center py-16">
       <p class="text-slate-500">No hay trabajos asignados para hoy.</p>
     </section>
 
-    <!-- Job Form Modal -->
+    <!-- Modal (Job form) -->
     <div id="modal" class="fixed inset-0 bg-black/40 hidden items-end sm:items-center sm:justify-center z-50">
       <div class="w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-3xl p-4 sm:p-6 shadow-xl">
         <div class="flex items-center justify-between mb-3">
           <h3 id="modalTitle" class="text-xl font-semibold">Detalles del trabajo</h3>
-          <button id="closeModal" class="rounded-full p-2 hover:bg-slate-100" aria-label="Close">✕</button>
+          <button id="closeModal" class="rounded-full p-2 hover:bg-slate-100" aria-label="Cerrar">✕</button>
         </div>
+        <!-- Línea con el vendedor/rep -->
+        <div id="repLine" class="text-sm text-slate-600 mb-2"></div>
+
         <form id="jobForm" class="space-y-4">
+          <!-- Hidden -->
           <input type="hidden" id="jobId" />
           <input type="hidden" id="jobNumber" />
           <input type="hidden" id="jobAddress" />
+          <input type="hidden" id="jobRep" />
+
+          <!-- Team multi-select -->
           <div>
             <label class="block text-sm font-medium mb-1">Otros miembros del equipo (selección múltiple)</label>
             <div id="crewPicker" class="relative">
@@ -75,6 +92,8 @@
               </div>
             </div>
           </div>
+
+          <!-- Times -->
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label for="startTime" class="block text-sm font-medium mb-1">Inicio</label>
@@ -85,10 +104,14 @@
               <input id="endTime" type="time" class="w-full rounded-xl border border-slate-300 p-3" required />
             </div>
           </div>
+
+          <!-- Damage / notes -->
           <div>
-            <label for="damageNotes" class="block text-sm font-medium mb-1">Daños / Notas</label>
-            <textarea id="damageNotes" rows="3" class="w-full rounded-xl border border-slate-300 p-3" required minlength="10"></textarea>
+            <label for="damageNotes" class="block text-sm font-medium mb-1">Daños / Notas (mín. 10 caracteres)</label>
+            <textarea id="damageNotes" rows="3" class="w-full rounded-xl border border-slate-300 p-3" required minlength="10" placeholder="Describe daños o notas… (mín. 10 caracteres)"></textarea>
           </div>
+
+          <!-- Status -->
           <div>
             <label for="status" class="block text-sm font-medium mb-1">Estado del trabajo</label>
             <select id="status" class="w-full rounded-xl border border-slate-300 p-3" required>
@@ -98,6 +121,8 @@
               <option>Tocón pendiente</option>
             </select>
           </div>
+
+          <!-- Payment -->
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label for="paymentCollected" class="block text-sm font-medium mb-1">¿Se cobró el pago?</label>
@@ -118,214 +143,217 @@
               </select>
             </div>
           </div>
+
           <button type="submit" class="w-full rounded-2xl btn-green py-3 text-white font-semibold shadow-md active:scale-[.99]">Enviar</button>
         </form>
       </div>
     </div>
 
+    <!-- Toast -->
     <div id="toast" class="fixed bottom-4 left-1/2 -translate-x-1/2 hidden bg-slate-900 text-white px-4 py-2 rounded-xl shadow-lg text-sm"></div>
   </div>
 
   <script>
-  // === CONFIG ===
-  const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbx8wpeqaVIBfXl5S0mejigOXp3TVKRBwiQ_084FPT64clZJsJPJn3NUJk-h1K39TPLF/exec";
+    /* ===============================================
+       CONFIG — Replace if your Web App URL changes
+    ================================================*/
+    const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbyyU5vvp0c5NdJKdrGspMonHGDBxPpetRBzzT0imhIgJam4Co46mJyy3px6gJr_evLh/exec";
 
-  // Globals
-  let ALL_CREW = [];          // from getCrewList
-  let TEAM_SELECTED = [];     // selected team members in the modal
+    // Globals
+    let ALL_CREW = [];
+    let TEAM_SELECTED = [];
 
-  // Tiny UI helpers
-  function diag(msg){ const el=document.getElementById('diag'); if(!el) return; el.textContent=msg; el.classList.remove('hidden'); console.log('[DIAG]', msg); }
-  function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.remove('hidden'); setTimeout(()=>t.classList.add('hidden'), 2200); }
-  function todayISO(){ return new Date().toLocaleDateString('en-CA', { timeZone: 'America/Chicago' }); }
+    // Helpers
+    const $ = (id) => document.getElementById(id);
+    function diag(msg){ const el=$('diag'); if(el){ el.textContent=msg; el.classList.remove('hidden'); } console.log('[DIAG]', msg); }
+    function showToast(msg){ const t=$('toast'); t.textContent=msg; t.classList.remove('hidden'); setTimeout(()=>t.classList.add('hidden'), 2200); }
+    function todayISO(){ return new Date().toLocaleDateString('en-CA', { timeZone: 'America/Chicago' }); } // yyyy-mm-dd
 
-  // === Load employees into the top select ===
-  async function fetchCrew(){
-    try{
-      const res = await fetch(`${GAS_ENDPOINT}?action=getCrewList`);
-      const list = await res.json();
-      ALL_CREW = Array.isArray(list) ? list : [];
-      const sel = document.getElementById('crewSelect');
-      sel.innerHTML = '<option value="" disabled selected>Elige tu nombre…</option>';
-      ALL_CREW.forEach(name=>{ const o=document.createElement('option'); o.value=name; o.textContent=name; sel.appendChild(o); });
-      diag(`Empleados cargados: ${ALL_CREW.length}`);
-    }catch(err){ diag('Error al cargar empleados'); console.error(err); }
-  }
+    // Load employees
+    async function fetchCrew(){
+      try{
+        const res = await fetch(`${GAS_ENDPOINT}?action=getCrewList`);
+        ALL_CREW = await res.json();
+        const sel = $('crewSelect');
+        sel.innerHTML = '<option value="" disabled selected>Elige tu nombre…</option>';
+        (ALL_CREW || []).forEach(name => {
+          const o=document.createElement('option'); o.value=name; o.textContent=name; sel.appendChild(o);
+        });
+        diag(`Empleados cargados: ${(ALL_CREW||[]).length}`);
+      }catch(err){ diag('Error al cargar empleados'); console.error(err); }
+    }
 
-  // === Fetch only the NEXT job for today (object or null) ===
-  async function fetchSchedule(crewName){
-    if(!crewName){ return; }
-    try{
-      const url = new URL(GAS_ENDPOINT);
-      url.searchParams.set('action','getNextJob');
-      url.searchParams.set('crew', crewName);
-      url.searchParams.set('date', todayISO());
-      const res  = await fetch(url.toString());
-      const data = await res.json();
+    // Get next job; if null, fall back to first job from schedule (so always show #1)
+    async function fetchSchedule(crewName){
+      if(!crewName) return;
+      const date = todayISO();
+      let job = null;
 
-      const scheduleList = document.getElementById('scheduleList');
-      const emptyState   = document.getElementById('emptyState');
-      const scheduleSect = document.getElementById('scheduleSection');
-      scheduleList.innerHTML = '';
+      try{
+        const r1 = await fetch(`${GAS_ENDPOINT}?action=getNextJob&crew=${encodeURIComponent(crewName)}&date=${date}`);
+        const d1 = await r1.json();
+        if (d1 && (d1.jobId || d1.jobNumber || d1.address)) job = d1;
+      }catch(e){ console.warn('getNextJob error', e); }
 
-      const job = (data && (data.jobNumber || data.address || data.jobId)) ? data : null;
-      diag(`[EN VIVO] ${crewName} → ${job ? 1 : 0} trabajo(s)`);
+      if (!job) {
+        try{
+          const r2 = await fetch(`${GAS_ENDPOINT}?action=getSchedule&crew=${encodeURIComponent(crewName)}&date=${date}`);
+          const d2 = await r2.json();
+          if (Array.isArray(d2) && d2.length) job = d2[0];
+        }catch(e){ console.warn('getSchedule error', e); }
+      }
 
-      if(!job){
-        emptyState.classList.remove('hidden');
-        scheduleSect.classList.add('hidden');
+      const list = $('scheduleList');
+      const empty = $('emptyState');
+      const sect = $('scheduleSection');
+      list.innerHTML = '';
+
+      if (!job) {
+        empty.classList.remove('hidden');
+        sect.classList.add('hidden');
+        diag(`[EN VIVO] ${crewName} @ ${date} → 0 trabajos`);
         return;
       }
 
-      emptyState.classList.add('hidden');
-      scheduleSect.classList.remove('hidden');
+      empty.classList.add('hidden');
+      sect.classList.remove('hidden');
 
+      // Card
       const li = document.createElement('li');
-      li.className = 'p-4 rounded-xl border border-slate-200 bg-white shadow-sm';
+      li.className = 'p-4 rounded-xl border border-slate-200 bg-white shadow-sm cursor-pointer';
       li.innerHTML = `
         <div class="flex items-start justify-between gap-3">
           <div>
             <div class="font-semibold text-lg">${job.jobNumber || '(sin número)'}</div>
+            <div class="text-sm text-emerald-700">Rep: ${(job.rep && String(job.rep).trim()) || '—'}</div>
             <div class="text-sm text-slate-600">${job.address || '(sin dirección)'}</div>
           </div>
           <button class="btn-green px-3 py-2 rounded-xl text-white text-sm font-semibold shadow-md active:scale-[.99]" id="openFormBtn">Llenar</button>
+        </div>`
+      ;
+      list.appendChild(li);
+
+      // Open modal on card or button
+      const open = () => openJobModal(job);
+      li.addEventListener('click', open);
+      li.querySelector('#openFormBtn').addEventListener('click', (e)=>{ e.stopPropagation(); open(); });
+
+      diag(`[EN VIVO] ${crewName} @ ${date} → 1 trabajo`);
+    } class="btn-green px-3 py-2 rounded-xl text-white text-sm font-semibold shadow-md active:scale-[.99]" id="openFormBtn">Llenar</button>
         </div>`;
-      scheduleList.appendChild(li);
+      list.appendChild(li);
 
-      // Wire up the green button to open modal
-      li.querySelector('#openFormBtn').addEventListener('click', ()=> openJobModal(job));
-    }catch(err){ diag('Error al cargar el trabajo'); console.error(err); }
-  }
+      // Open modal on card or button
+      const open = () => openJobModal(job);
+      li.addEventListener('click', open);
+      li.querySelector('#openFormBtn').addEventListener('click', (e)=>{ e.stopPropagation(); open(); });
 
-  // === Modal logic ===
-  function openJobModal(job){
-    // reset form
-    const form = document.getElementById('jobForm');
-    form.reset();
-    TEAM_SELECTED = [];
-    renderTeamTokens();
-    buildCrewOptions();
-
-    // fill hidden fields & title
-    document.getElementById('jobId').value      = job.jobId || '';
-    document.getElementById('jobNumber').value  = job.jobNumber || '';
-    document.getElementById('jobAddress').value = job.address || '';
-    document.getElementById('modalTitle').textContent = `Trabajo ${job.jobNumber || ''}`;
-
-    // Payment type enable/disable
-    const payCollected = document.getElementById('paymentCollected');
-    const payType      = document.getElementById('paymentType');
-    function updatePayType(){
-      if (payCollected.value === 'Sí') { payType.disabled = false; } else { payType.disabled = true; payType.value=''; }
+      diag(`[EN VIVO] ${crewName} @ ${date} → 1 trabajo`);
     }
-    payCollected.removeEventListener('change', updatePayType); // avoid stacking
-    payCollected.addEventListener('change', updatePayType);
-    updatePayType();
 
-    document.getElementById('modal').classList.remove('hidden');
-  }
+    // Modal + form
+    function openJobModal(job){
+      $('jobForm').reset();
+      TEAM_SELECTED = [];
+      renderTeamTokens();
+      buildCrewOptions();
 
-  document.getElementById('closeModal').addEventListener('click', ()=>{
-    document.getElementById('modal').classList.add('hidden');
-  });
+      $('jobId').value      = job.jobId || '';
+      $('jobNumber').value  = job.jobNumber || '';
+      $('jobAddress').value = job.address || '';
+      $('jobRep').value     = job.rep || '';
+      $('modalTitle').textContent = `Trabajo ${job.jobNumber || ''}`;
+      const repLineEl = $('repLine'); if (repLineEl) repLineEl.textContent = 'Vendedor: ' + (job.rep || '—');
 
-  // === Crew multi-select (dropdown + chips) ===
-  function buildCrewOptions(){
-    const me   = document.getElementById('crewSelect').value || '';
-    const list = ALL_CREW.filter(n => n !== me);
-    const ul   = document.getElementById('crewOptions');
-    ul.innerHTML = '';
-    list.forEach(name => {
-      const li = document.createElement('li');
-      li.className = 'px-3 py-2 text-sm cursor-pointer hover:bg-slate-50';
-      li.textContent = name;
-      li.addEventListener('click', ()=> toggleTeamMember(name));
-      ul.appendChild(li);
-    });
+      const payCollected = $('paymentCollected');
+      const payType = $('paymentType');
+      const enablePayType = () => { payType.disabled = (payCollected.value !== 'Sí'); if (payType.disabled) payType.value = ''; };
+      payCollected.onchange = enablePayType; enablePayType();
 
-    const btn = document.getElementById('crewDropdownBtn');
-    const dd  = document.getElementById('crewDropdown');
-    btn.onclick = ()=> dd.classList.toggle('hidden');
-    document.getElementById('crewSearch').oninput = (e)=> {
-      const q = e.target.value.toLowerCase();
-      Array.from(ul.children).forEach(li=>{
-        li.classList.toggle('hidden', !li.textContent.toLowerCase().includes(q));
+      $('modal').classList.remove('hidden');
+    }
+    $('closeModal').addEventListener('click', ()=> $('modal').classList.add('hidden'));
+
+    function buildCrewOptions(){
+      const me = $('crewSelect').value || '';
+      const ul = $('crewOptions');
+      ul.innerHTML = '';
+      (ALL_CREW.filter(n => n !== me)).forEach(name => {
+        const li=document.createElement('li');
+        li.className='px-3 py-2 text-sm cursor-pointer hover:bg-slate-50';
+        li.textContent=name;
+        li.onclick=()=>toggleTeamMember(name);
+        ul.appendChild(li);
       });
-    };
-  }
-
-  function toggleTeamMember(name){
-    const i = TEAM_SELECTED.indexOf(name);
-    if (i === -1) TEAM_SELECTED.push(name); else TEAM_SELECTED.splice(i,1);
-    renderTeamTokens();
-  }
-
-  function renderTeamTokens(){
-    const box = document.getElementById('crewTokens');
-    box.innerHTML = '';
-    TEAM_SELECTED.forEach(name => {
-      const chip = document.createElement('span');
-      chip.className = 'inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 rounded-full px-2 py-1 text-xs';
-      chip.innerHTML = `${name} <button type="button" aria-label="remove" class="ml-1">✕</button>`;
-      chip.querySelector('button').addEventListener('click', ()=>{ toggleTeamMember(name); });
-      box.appendChild(chip);
-    });
-    const ph = document.getElementById('crewDropdownPlaceholder');
-    ph.textContent = TEAM_SELECTED.length ? '' : 'Toca para seleccionar…';
-  }
-
-  // === Submit form ===
-  document.getElementById('jobForm').addEventListener('submit', async (e)=>{
-    e.preventDefault();
-
-    const crew = document.getElementById('crewSelect').value;
-    const startTime = document.getElementById('startTime').value;
-    const endTime   = document.getElementById('endTime').value;
-    const notes     = document.getElementById('damageNotes').value.trim();
-    const status    = document.getElementById('status').value;
-    const payCol    = document.getElementById('paymentCollected').value;
-    const payType   = document.getElementById('paymentType').value;
-
-    // validations
-    if (!startTime || !endTime) return showToast('Ingresa inicio y fin.');
-    if (notes.length < 10)     return showToast('Escribe al menos 10 caracteres en Daños/Notas.');
-    if (endTime <= startTime)  return showToast('La hora de fin debe ser mayor que inicio.');
-
-    const payload = {
-      action: 'submitJob',
-      crew,
-      jobId:      document.getElementById('jobId').value,
-      jobNumber:  document.getElementById('jobNumber').value,
-      jobAddress: document.getElementById('jobAddress').value,
-      teamMembers: TEAM_SELECTED,
-      startTime,
-      endTime,
-      damageNotes: notes,
-      status,
-      paymentCollected: payCol,
-      paymentType: payType
-    };
-
-    try{
-      const res = await fetch(GAS_ENDPOINT, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(payload) });
-      const json = await res.json();
-      if (!json || json.ok !== true) throw new Error(json && json.error || 'Error al guardar');
-      showToast('Enviado ✅');
-      document.getElementById('modal').classList.add('hidden');
-      // Refresh to unlock next job
-      fetchSchedule(crew);
-    }catch(err){
-      console.error(err);
-      showToast('No se pudo enviar');
+      $('crewDropdownBtn').onclick = ()=> $('crewDropdown').classList.toggle('hidden');
+      $('crewSearch').oninput = (e)=>{
+        const q=e.target.value.toLowerCase();
+        Array.from(ul.children).forEach(li=> li.classList.toggle('hidden', !li.textContent.toLowerCase().includes(q)));
+      };
     }
-  });
+    function toggleTeamMember(name){
+      const i = TEAM_SELECTED.indexOf(name);
+      if (i === -1) TEAM_SELECTED.push(name); else TEAM_SELECTED.splice(i,1);
+      renderTeamTokens();
+    }
+    function renderTeamTokens(){
+      const box=$('crewTokens'); box.innerHTML='';
+      TEAM_SELECTED.forEach(name=>{
+        const chip=document.createElement('span');
+        chip.className='inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 rounded-full px-2 py-1 text-xs';
+        chip.innerHTML = `${name} <button type="button" class="ml-1">✕</button>`;
+        chip.querySelector('button').onclick = ()=> toggleTeamMember(name);
+        box.appendChild(chip);
+      });
+      $('crewDropdownPlaceholder').textContent = TEAM_SELECTED.length ? '' : 'Toca para seleccionar…';
+    }
 
-  // === Events ===
-  document.addEventListener('DOMContentLoaded', ()=>{
-    fetchCrew();
-    document.getElementById('crewSelect').addEventListener('change', (e)=>{ fetchSchedule(e.target.value); });
-    document.getElementById('refreshBtn').addEventListener('click', ()=>{ const name=document.getElementById('crewSelect').value; if(name) fetchSchedule(name); });
-  });
-</script>
+    // Submit
+    $('jobForm').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const crew = $('crewSelect').value;
+      const notes = $('damageNotes').value.trim();
+      if (notes.length < 10) return showToast('Escribe al menos 10 caracteres en Daños/Notas.');
+
+      const payload = {
+        action: 'submitJob',
+        crew,
+        jobId:      $('jobId').value,
+        jobNumber:  $('jobNumber').value,
+        jobAddress: $('jobAddress').value,
+        rep:        $('jobRep').value,
+        teamMembers: TEAM_SELECTED,
+        startTime:  $('startTime').value,
+        endTime:    $('endTime').value,
+        damageNotes: notes,
+        status:     $('status').value,
+        paymentCollected: $('paymentCollected').value,
+        paymentType:      $('paymentType').value
+      };
+
+      try{
+        const res = await fetch(GAS_ENDPOINT, {
+          method:'POST',
+          headers:{'Content-Type':'text/plain;charset=utf-8'},
+          body: JSON.stringify(payload)
+        });
+        const json = await (async () => { try { return await res.json(); } catch(_) { const t = await res.text(); return { ok:false, error:`Respuesta no JSON (${res.status}): ${t.slice(0,200)}` }; } })();
+        if (!json || json.ok !== true) throw new Error(json && json.error || `HTTP ${res.status}`);
+        showToast('Enviado ✅');
+        $('modal').classList.add('hidden');
+        fetchSchedule(crew); // desbloquea el siguiente trabajo
+      }catch(err){
+        console.error(err);
+        showToast('No se pudo enviar');
+      }
+    });
+
+    // Wire up
+    document.addEventListener('DOMContentLoaded', ()=>{
+      fetchCrew();
+      $('crewSelect').addEventListener('change', (e)=> fetchSchedule(e.target.value));
+      $('refreshBtn').addEventListener('click', ()=> { const n=$('crewSelect').value; if(n) fetchSchedule(n); });
+    });
+  </script>
 </body>
 </html>
