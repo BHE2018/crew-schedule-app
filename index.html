@@ -127,73 +127,79 @@
   </div>
 
   <script>
-  const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycby5G5-5Syent2Xqw-UmYdIhuD_g6UcyXL_nLdE4FB6C1GpnyBuAbm85zShf_FzaTvwb/exec";
+  // === CONFIG ===
+  const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbyVDvF9ZCzv5haxryyi0OYA_78LWSLHMPxhN4jSEX2Yx1m1o8jXJ0ETXzHzxl2dZCoQ/exec";
 
-  async function fetchCrew() {
-    try {
+  // tiny UI diag helper
+  function diag(msg){ const el=document.getElementById('diag'); if(!el) return; el.textContent=msg; el.classList.remove('hidden'); console.log('[DIAG]', msg); }
+
+  // === Load employees into the top select ===
+  async function fetchCrew(){
+    try{
       const res = await fetch(`${GAS_ENDPOINT}?action=getCrewList`);
-      const crew = await res.json();
-      const crewSelect = document.getElementById("crewSelect");
-      crew.forEach(name => {
-        const opt = document.createElement("option");
-        opt.value = name;
-        opt.textContent = name;
-        crewSelect.appendChild(opt);
-      });
-    } catch (e) {
-      console.error("Error loading crew list", e);
-    }
+      const list = await res.json();
+      const sel = document.getElementById('crewSelect');
+      sel.innerHTML = '<option value="" disabled selected>Elige tu nombre…</option>';
+      if(Array.isArray(list)){
+        list.forEach(name=>{ const o=document.createElement('option'); o.value=name; o.textContent=name; sel.appendChild(o); });
+        diag(`Empleados cargados: ${list.length}`);
+      }else{
+        diag('No se recibieron empleados (revisa GAS)');
+      }
+    }catch(err){ diag('Error al cargar empleados'); console.error(err); }
   }
 
-  <script>
-async function fetchSchedule(crewName) {
-  try {
-    const res = await fetch(`${GAS_ENDPOINT}?action=getNextJob&crew=${encodeURIComponent(crewName)}`);
-    const data = await res.json();
+  // === Fetch only the NEXT job for today (object or null) ===
+  async function fetchSchedule(crewName){
+    if(!crewName){ return; }
+    try{
+      const res = await fetch(`${GAS_ENDPOINT}?action=getNextJob&crew=${encodeURIComponent(crewName)}`);
+      const data = await res.json();
 
-    const scheduleList   = document.getElementById("scheduleList");
-    const emptyState     = document.getElementById("emptyState");
-    const scheduleSect   = document.getElementById("scheduleSection");
-    scheduleList.innerHTML = "";
+      const scheduleList = document.getElementById('scheduleList');
+      const emptyState   = document.getElementById('emptyState');
+      const scheduleSect = document.getElementById('scheduleSection');
+      scheduleList.innerHTML = '';
 
-    // getNextJob returns ONE job object or null
-    const job = (data && (data.jobNumber || data.address || data.jobId)) ? data : null;
+      const job = (data && (data.jobNumber || data.address || data.jobId)) ? data : null;
+      if(!job){
+        emptyState.classList.remove('hidden');
+        scheduleSect.classList.add('hidden');
+        diag(`[EN VIVO] ${crewName} → 0 trabajos`);
+        return;
+      }
 
-    if (!job) {
-      emptyState.classList.remove("hidden");
-      scheduleSect.classList.add("hidden");
-      return;
-    }
+      emptyState.classList.add('hidden');
+      scheduleSect.classList.remove('hidden');
 
-    emptyState.classList.add("hidden");
-    scheduleSect.classList.remove("hidden");
-
-    const li = document.createElement("li");
-    li.className = "p-3 rounded-xl border border-slate-200 bg-white shadow-sm";
-    li.innerHTML = `
-      <div class="font-semibold">${job.jobNumber || ""}</div>
-      <div class="text-sm text-slate-600">${job.address || ""}</div>
-    `;
-    scheduleList.appendChild(li);
-  } catch (e) {
-    console.error("Error loading schedule", e);
+      const li = document.createElement('li');
+      li.className = 'p-3 rounded-xl border border-slate-200 bg-white shadow-sm';
+      li.innerHTML = `
+        <div class="font-semibold">${job.jobNumber || ''}</div>
+        <div class="text-sm text-slate-600">${job.address || ''}</div>
+      `;
+      scheduleList.appendChild(li);
+      diag(`[EN VIVO] ${crewName} → 1 trabajo`);
+    }catch(err){ diag('Error al cargar el trabajo'); console.error(err); }
   }
-}
+
+  // === Events ===
+  document.addEventListener('DOMContentLoaded', ()=>{
+    fetchCrew();
+
+    document.getElementById('crewSelect').addEventListener('change', (e)=>{
+      fetchSchedule(e.target.value);
+    });
+
+    document.getElementById('refreshBtn').addEventListener('click', ()=>{
+      const name = document.getElementById('crewSelect').value;
+      if(name) fetchSchedule(name);
+    });
+
+    document.getElementById('closeModal').addEventListener('click', ()=>{
+      document.getElementById('modal').classList.add('hidden');
+    });
+  });
 </script>
-
-
-  document.getElementById("crewSelect").addEventListener("change", e => {
-    const crewName = e.target.value;
-    fetchSchedule(crewName);
-  });
-
-  document.getElementById("refreshBtn").addEventListener("click", () => {
-    const crewName = document.getElementById("crewSelect").value;
-    if (crewName) fetchSchedule(crewName);
-  });
-
-  document.addEventListener("DOMContentLoaded", fetchCrew);
-  </script>
 </body>
 </html>
-
