@@ -4,13 +4,10 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Horario del equipo & Job Form</title>
-  <!-- Tailwind CSS (CDN) for fast, mobile-first styling -->
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    /* iOS tap highlight & input zoom fixes */
     html { -webkit-tap-highlight-color: transparent; }
     input, select, textarea { font-size: 16px; }
-    /* Botones verde metálico */
     .btn-green { background: linear-gradient(180deg, #8fd694 0%, #34c759 45%, #0b7f3b 100%); color:#fff; border:1px solid #0b7f3b; box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 4px 10px rgba(0,0,0,.12); }
     .btn-green:hover { filter: brightness(1.05); }
     .btn-green:active { transform: translateY(1px); }
@@ -20,16 +17,14 @@
 </head>
 <body class="bg-slate-50 text-slate-800">
   <div class="max-w-md mx-auto min-h-screen p-4">
-    <!-- Header -->
     <header class="flex items-center justify-between mb-4">
-      <h1 class="text-2xl font-bold">Horario del equipo<\/h1>
+      <h1 class="text-2xl font-bold">Horario del equipo</h1>
       <div class="flex items-center gap-2">
-        <span id="modePill" class="hidden text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-300">DEMO<\/span>
-        <span id="version" class="text-xs text-slate-500">v1.0<\/span>
-      <\/div>
+        <span id="modePill" class="hidden text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-300">DEMO</span>
+        <span id="version" class="text-xs text-slate-500">v1.0</span>
+      </div>
     </header>
 
-    <!-- Crew Name Select -->
     <section class="mb-4">
       <label for="crewSelect" class="block text-sm font-medium mb-2">Selecciona tu nombre</label>
       <select id="crewSelect" class="w-full rounded-2xl border border-slate-300 bg-white p-3 shadow-sm focus:ring-2 focus:ring-indigo-500">
@@ -37,20 +32,18 @@
       </select>
     </section>
 
-    <!-- Schedule List -->
     <section id="scheduleSection" class="hidden">
       <div class="flex items-center justify-between mb-2">
         <h2 class="text-lg font-semibold">Tu siguiente trabajo</h2>
         <div class="flex items-center gap-3">
           <button id="refreshBtn" class="text-sm btn-link-green underline">Actualizar</button>
-          <button id="resetDemoBtn" class="text-sm btn-link-green underline hidden">Reiniciar demo<\/button>
+          <button id="resetDemoBtn" class="text-sm btn-link-green underline hidden">Reiniciar demo</button>
         </div>
       </div>
       <p id="diag" class="text-xs text-slate-500 mb-2 hidden"></p>
       <ul id="scheduleList" class="space-y-2"></ul>
     </section>
 
-    <!-- Empty State -->
     <section id="emptyState" class="hidden text-center py-16">
       <p class="text-slate-500">No hay trabajos asignados para hoy.</p>
     </section>
@@ -62,13 +55,10 @@
           <h3 id="modalTitle" class="text-xl font-semibold">Detalles del trabajo</h3>
           <button id="closeModal" class="rounded-full p-2 hover:bg-slate-100" aria-label="Close">✕</button>
         </div>
-
         <form id="jobForm" class="space-y-4">
-          <!-- Hidden job meta -->
           <input type="hidden" id="jobId" />
           <input type="hidden" id="jobNumber" />
           <input type="hidden" id="jobAddress" />
-
           <div>
             <label class="block text-sm font-medium mb-1">Otros miembros del equipo (selección múltiple)</label>
             <div id="crewPicker" class="relative">
@@ -85,7 +75,6 @@
               </div>
             </div>
           </div>
-
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label for="startTime" class="block text-sm font-medium mb-1">Inicio</label>
@@ -96,12 +85,10 @@
               <input id="endTime" type="time" class="w-full rounded-xl border border-slate-300 p-3" required />
             </div>
           </div>
-
           <div>
-            <label for="damageNotes" class="block text-sm font-medium mb-1">Daños / Notas (mín. 10 caracteres)</label>
-            <textarea id="damageNotes" rows="3" class="w-full rounded-xl border border-slate-300 p-3" required minlength="10" placeholder="Describe daños o notas… (mín. 10 caracteres)"></textarea>
+            <label for="damageNotes" class="block text-sm font-medium mb-1">Daños / Notas</label>
+            <textarea id="damageNotes" rows="3" class="w-full rounded-xl border border-slate-300 p-3" required minlength="10"></textarea>
           </div>
-
           <div>
             <label for="status" class="block text-sm font-medium mb-1">Estado del trabajo</label>
             <select id="status" class="w-full rounded-xl border border-slate-300 p-3" required>
@@ -111,7 +98,6 @@
               <option>Tocón pendiente</option>
             </select>
           </div>
-
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label for="paymentCollected" class="block text-sm font-medium mb-1">¿Se cobró el pago?</label>
@@ -132,18 +118,69 @@
               </select>
             </div>
           </div>
-
           <button type="submit" class="w-full rounded-2xl btn-green py-3 text-white font-semibold shadow-md active:scale-[.99]">Enviar</button>
         </form>
       </div>
     </div>
 
-    <!-- Toast -->
     <div id="toast" class="fixed bottom-4 left-1/2 -translate-x-1/2 hidden bg-slate-900 text-white px-4 py-2 rounded-xl shadow-lg text-sm"></div>
   </div>
 
-<script>
+  <script>
   const GAS_ENDPOINT = "https://script.google.com/macros/s/AKfycbxjE4fwm5f_kV6spMu9JYuFaZDXkKYOtoHNmL_psW4Z_7xFThkRsMma77eYpdM_WFjy/exec";
-  /* rest of your JS below… */
-</script>
+
+  async function fetchCrew() {
+    try {
+      const res = await fetch(`${GAS_ENDPOINT}?action=getCrewList`);
+      const crew = await res.json();
+      const crewSelect = document.getElementById("crewSelect");
+      crew.forEach(name => {
+        const opt = document.createElement("option");
+        opt.value = name;
+        opt.textContent = name;
+        crewSelect.appendChild(opt);
+      });
+    } catch (e) {
+      console.error("Error loading crew list", e);
+    }
+  }
+
+  async function fetchSchedule(crewName) {
+    try {
+      const res = await fetch(`${GAS_ENDPOINT}?action=getNextJob&crew=${encodeURIComponent(crewName)}`);
+      const jobs = await res.json();
+      const scheduleList = document.getElementById("scheduleList");
+      scheduleList.innerHTML = "";
+      if (jobs.length === 0) {
+        document.getElementById("emptyState").classList.remove("hidden");
+        document.getElementById("scheduleSection").classList.add("hidden");
+      } else {
+        document.getElementById("emptyState").classList.add("hidden");
+        document.getElementById("scheduleSection").classList.remove("hidden");
+        jobs.forEach(job => {
+          const li = document.createElement("li");
+          li.className = "p-3 rounded-xl border border-slate-200 bg-white shadow-sm";
+          li.innerHTML = `<div class='font-semibold'>${job.JobNumber || "Job"} - ${job.Address || ""}</div><div class='text-sm text-slate-600'>${job.Date || ""}</div>`;
+          scheduleList.appendChild(li);
+        });
+      }
+    } catch (e) {
+      console.error("Error loading schedule", e);
+    }
+  }
+
+  document.getElementById("crewSelect").addEventListener("change", e => {
+    const crewName = e.target.value;
+    fetchSchedule(crewName);
+  });
+
+  document.getElementById("refreshBtn").addEventListener("click", () => {
+    const crewName = document.getElementById("crewSelect").value;
+    if (crewName) fetchSchedule(crewName);
+  });
+
+  document.addEventListener("DOMContentLoaded", fetchCrew);
+  </script>
+</body>
+</html>
 
