@@ -145,29 +145,42 @@
     }
   }
 
-  async function fetchSchedule(crewName) {
-    try {
-      const res = await fetch(`${GAS_ENDPOINT}?action=getNextJob&crew=${encodeURIComponent(crewName)}`);
-      const jobs = await res.json();
-      const scheduleList = document.getElementById("scheduleList");
-      scheduleList.innerHTML = "";
-      if (jobs.length === 0) {
-        document.getElementById("emptyState").classList.remove("hidden");
-        document.getElementById("scheduleSection").classList.add("hidden");
-      } else {
-        document.getElementById("emptyState").classList.add("hidden");
-        document.getElementById("scheduleSection").classList.remove("hidden");
-        jobs.forEach(job => {
-          const li = document.createElement("li");
-          li.className = "p-3 rounded-xl border border-slate-200 bg-white shadow-sm";
-          li.innerHTML = `<div class='font-semibold'>${job.JobNumber || "Job"} - ${job.Address || ""}</div><div class='text-sm text-slate-600'>${job.Date || ""}</div>`;
-          scheduleList.appendChild(li);
-        });
-      }
-    } catch (e) {
-      console.error("Error loading schedule", e);
+  <script>
+async function fetchSchedule(crewName) {
+  try {
+    const res = await fetch(`${GAS_ENDPOINT}?action=getNextJob&crew=${encodeURIComponent(crewName)}`);
+    const data = await res.json();
+
+    const scheduleList   = document.getElementById("scheduleList");
+    const emptyState     = document.getElementById("emptyState");
+    const scheduleSect   = document.getElementById("scheduleSection");
+    scheduleList.innerHTML = "";
+
+    // getNextJob returns ONE job object or null
+    const job = (data && (data.jobNumber || data.address || data.jobId)) ? data : null;
+
+    if (!job) {
+      emptyState.classList.remove("hidden");
+      scheduleSect.classList.add("hidden");
+      return;
     }
+
+    emptyState.classList.add("hidden");
+    scheduleSect.classList.remove("hidden");
+
+    const li = document.createElement("li");
+    li.className = "p-3 rounded-xl border border-slate-200 bg-white shadow-sm";
+    li.innerHTML = `
+      <div class="font-semibold">${job.jobNumber || ""}</div>
+      <div class="text-sm text-slate-600">${job.address || ""}</div>
+    `;
+    scheduleList.appendChild(li);
+  } catch (e) {
+    console.error("Error loading schedule", e);
   }
+}
+</script>
+
 
   document.getElementById("crewSelect").addEventListener("change", e => {
     const crewName = e.target.value;
